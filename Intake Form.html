@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ServiceMaster by Singer – New Customer / Job Sheet</title>
+
+  <!-- Mobile responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- jsPDF for PDF generation -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 { text-align: center; margin: 0 0 4px; }
+    .subtitle { text-align: center; color: #777; font-size: 0.9rem; }
+
+    h2 { margin-top: 28px; font-size: 1.1rem; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    h3 { margin-top: 18px; font-size: 1rem; }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; }
+
+    .field { display: flex; flex-direction: column; margin-bottom: 12px; }
+    label { font-size: 0.9rem; margin-bottom: 4px; }
+
+    input, select, textarea {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+
+    .inline-options, .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      font-size: 0.9rem;
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-size: 0.9rem;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill.active { background: #000; color: #fff; border-color: #000; }
+    .pill input { margin: 0; }
+
+    .hidden { display: none; }
+    small { font-size: 0.75rem; color: #777; }
+
+    .actions {
+      margin-top: 28px;
+      text-align: right;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button[type="submit"] { background: #000; color: #fff; }
+    button[type="button"] { background: #e0e0e0; }
+
+    button.dispatch {
+      background: #ffd400;
+      color: #000;
+      border: 1px solid #c9ab00;
+    }
+
+    /* Print */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { box-shadow: none; border-radius: 0; max-width: none; }
+      .actions { display: none; }
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      body { padding: 12px; }
+      .container { padding: 16px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      input, select, textarea { font-size: 16px; } /* prevents iOS zoom */
+      .inline-options, .checkbox-group, .pill-group { gap: 10px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .actions button { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+
+<form id="intakeForm">
+  <div class="container">
+
+    <h1>ServiceMaster by Singer</h1>
+    <div class="subtitle">NEW CUSTOMER / JOB SHEET – Internal Intake Form</div>
+
+    <!-- 2. Customer / Contact Information -->
+    <h2>1. Customer / Contact Information</h2>
+    <div class="grid-2">
+      <div class="field">
+        <label for="full_name">Full Name</label>
+        <input id="full_name" name="full_name" type="text">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email">
+      </div>
+      <div class="field">
+        <label for="main_phone">Main Phone</label>
+        <input id="main_phone" name="main_phone" type="tel">
+      </div>
+      <div class="field">
+        <label for="main_phone_type">Main Phone Type</label>
+        <select id="main_phone_type" name="main_phone_type">
+          <option value="">Select...</option>
+          <option>Home</option><option>Cell</option><option>Work</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="second_phone">2nd Phone</label>
+        <input id="second_phone" name="second_phone" type="tel">
+      </div>
+      <div class="field">
+        <label for="second_phone_type">2nd Phone Type</label>
+        <select id="second_phone_type" name="second_phone_type">
+          <option value="">Select...</option>
+          <option>Home</option><option>Cell</option><option>Work</option>
+        </select>
+      </div>
+      
+      
+      <div class="field">
+        <label for="preferred_contact">Preferred Contact Method</label>
+        <select id="preferred_contact" name="preferred_contact">
+          <option value="">Select...</option>
+          <option>Call</option><option>Email</option><option>Text</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="loss_address">Loss Address</label>
+      <input id="loss_address" name="loss_address" type="text" placeholder="Street">
+      <input id="loss_address2" name="loss_address2" type="text" placeholder="Unit / Suite (optional)" style="margin-top:6px;">
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label for="loss_city">City</label>
+        <input id="loss_city" name="loss_city" type="text">
+      </div>
+      <div class="field">
+        <label for="loss_state">State</label>
+        <input id="loss_state" name="loss_state" type="text">
+      </div>
+      <div class="field">
+        <label for="loss_zip">ZIP</label>
+        <input id="loss_zip" name="loss_zip" type="text">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Billing Address</label>
+      <label style="margin-bottom:10px;"><input type="checkbox" id="billing_same_loss"> Same as Loss Address</label>
+      <input id="billing_address" name="billing_address" type="text" placeholder="Street">
+      <input id="billing_address2" name="billing_address2" type="text" placeholder="Unit / Suite (optional)" style="margin-top:6px;">
+    </div>
+    <div class="grid-3">
+      <div class="field">
+        <label for="billing_city">City</label>
+        <input id="billing_city" name="billing_city" type="text">
+      </div>
+      <div class="field">
+        <label for="billing_state">State</label>
+        <input id="billing_state" name="billing_state" type="text">
+      </div>
+      <div class="field">
+        <label for="billing_zip">ZIP</label>
+        <input id="billing_zip" name="billing_zip" type="text">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+
+        <label>Primary Contact</label>
+        <label><input type="checkbox" id="primary_same_customer"> Same as Customer</label>
+
+        <div class="grid-3" style="margin-top:8px;">
+          <div class="field">
+            <label for="primary_contact_name">Primary Contact Name</label>
+            <input id="primary_contact_name" name="primary_contact_name" type="text">
+          </div>
+          <div class="field">
+            <label for="primary_contact_phone">Primary Contact Phone</label>
+            <input id="primary_contact_phone" name="primary_contact_phone" type="tel">
+          </div>
+          <div class="field">
+            <label for="primary_contact_email">Primary Contact Email</label>
+            <input id="primary_contact_email" name="primary_contact_email" type="email">
+          </div>
+        </div>
+        
+      </div>
+      <div class="field">
+        <label for="referred_by">Referred By</label>
+        <input id="referred_by" name="referred_by" type="text">
+      </div>
+    </div>
+
+    <!-- 3. Property Information -->
+    <h2>2. Property Information</h2>
+    <div class="field">
+      <label>Property Type</label>
+      <div class="inline-options">
+        <label><input type="radio" name="property_type" value="residential"> Residential</label>
+        <label><input type="radio" name="property_type" value="commercial"> Commercial</label>
+      </div>
+    </div>
+
+    <div id="commercial_section" class="hidden">
+      <h3>Commercial Subtype</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="commercial_type" value="apartments_condos"> Apartment(s) / Condo(s)</label>
+        <label><input type="checkbox" name="commercial_type" value="hotel_motel"> Hotel / Motel</label>
+        <label><input type="checkbox" name="commercial_type" value="store"> Store</label>
+        <label><input type="checkbox" name="commercial_type" value="restaurant"> Restaurant</label>
+        <label><input type="checkbox" name="commercial_type" value="manufacturing"> Manufacturing</label>
+        <label><input type="checkbox" name="commercial_type" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="commercial_other_desc">Commercial – Other (Describe)</label>
+        <textarea id="commercial_other_desc" name="commercial_other_desc"></textarea>
+      </div>
+    </div>
+
+    <div id="residential_section" class="hidden">
+      <h3>Residential Subtype</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="residential_type" value="single_family"> Single Family Home</label>
+        <label><input type="checkbox" name="residential_type" value="ranch"> Ranch</label>
+        <label><input type="checkbox" name="residential_type" value="townhouse"> Townhouse</label>
+        <label><input type="checkbox" name="residential_type" value="split_foyer"> Split Foyer</label>
+        <label><input type="checkbox" name="residential_type" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="residential_other_desc">Residential – Other (Describe)</label>
+        <textarea id="residential_other_desc" name="residential_other_desc"></textarea>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="field">
+        <label>Rental Property</label>
+        <div class="inline-options">
+          <label><input type="radio" name="rental_property" value="yes"> Yes</label>
+          <label><input type="radio" name="rental_property" value="no"> No</label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="stories">No. of Stories (incl. basement)</label>
+        <input id="stories" name="stories" type="number" min="0">
+      </div>
+      <div class="field">
+        <label for="year_built">Year Built</label>
+        <input id="year_built" name="year_built" type="number" min="1800" max="2100">
+      </div>
+    </div>
+
+    <!-- 4. Loss Information -->
+    <h2>3. Loss Information</h2>
+    <div class="grid-2">
+      <div class="field">
+        <label for="date_of_loss">Date of Loss</label>
+        <input id="date_of_loss" name="date_of_loss" type="date">
+      </div>
+      <div class="field">
+        <label for="time_of_loss">Time of Loss</label>
+        <input id="time_of_loss" name="time_of_loss" type="time">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Source of Damage Determined</label>
+        <div class="inline-options">
+          <label><input type="radio" name="source_determined" value="yes"> Yes</label>
+          <label><input type="radio" name="source_determined" value="no"> No</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Repaired / Addressed</label>
+        <div class="inline-options">
+          <label><input type="radio" name="repaired_addressed" value="yes"> Yes</label>
+          <label><input type="radio" name="repaired_addressed" value="no"> No</label>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Mitigation Needed</label>
+        <div class="inline-options">
+          <label><input type="radio" name="mitigation_needed" value="yes"> Yes</label>
+          <label><input type="radio" name="mitigation_needed" value="no"> No</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Emergency Services Needed</label>
+        <div class="inline-options">
+          <label><input type="radio" name="emergency_services" value="yes"> Yes</label>
+          <label><input type="radio" name="emergency_services" value="no"> No</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Damage Type -->
+    <h2>4. Damage Type</h2>
+    <div class="pill-group" id="damageTypeGroup">
+      <label class="pill"><input type="checkbox" name="damage_type" value="fire"> Fire</label>
+      <label class="pill"><input type="checkbox" name="damage_type" value="water"> Water</label>
+      <label class="pill"><input type="checkbox" name="damage_type" value="bio"> Bio</label>
+      <label class="pill"><input type="checkbox" name="damage_type" value="other"> Other</label>
+    </div>
+
+    <div id="fire_damage_section" class="hidden">
+      <h3>Fire</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="fire_item" value="mitigation_needed"> Mitigation Needed</label>
+        <label><input type="checkbox" name="fire_item" value="structural_damage"> Structural Damage</label>
+        <label><input type="checkbox" name="fire_item" value="smoke_damage"> Smoke Damage</label>
+        <label><input type="checkbox" name="fire_item" value="water_damage"> Water Damage</label>
+      </div>
+    </div>
+
+    <div id="water_damage_section" class="hidden">
+      <h3>Water</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="water_item" value="mitigation_needed"> Mitigation Needed</label>
+        <label><input type="checkbox" name="water_item" value="active_leak"> Active Leak</label>
+        <label><input type="checkbox" name="water_item" value="standing_water"> Standing Water</label>
+        <label><input type="checkbox" name="water_item" value="sump_pump"> Sump Pump</label>
+        <label><input type="checkbox" name="water_item" value="fungal_growth"> Odor / Suspected Fungal Growth</label>
+      </div>
+    </div>
+
+    <div id="bio_damage_section" class="hidden">
+      <h3>Bio</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="bio_item" value="trauma"> Trauma</label>
+        <label><input type="checkbox" name="bio_item" value="infectious"> Infectious Disease</label>
+        <label><input type="checkbox" name="bio_item" value="other"> Other</label>
+      </div>
+    </div>
+
+    <div id="other_damage_section" class="hidden">
+      <h3>Other</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="other_item" value="structural_damage"> Structural Damage</label>
+        <label><input type="checkbox" name="other_item" value="cleaning"> Cleaning / Mitigation Needed (ex. Graffiti, etc.)</label>
+        <label><input type="checkbox" name="other_item" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="damage_other_desc">If Other, describe</label>
+        <textarea id="damage_other_desc" name="damage_other_desc"></textarea>
+      </div>
+    </div>
+
+    <!-- 6. Affected Property -->
+    <h2>5. Affected Property</h2>
+    <div class="pill-group" id="affectedPropertyGroup">
+      <label class="pill"><input type="checkbox" name="affected_group" value="external"> External (Structure)</label>
+      <label class="pill"><input type="checkbox" name="affected_group" value="internal"> Internal (Structure)</label>
+      <label class="pill"><input type="checkbox" name="affected_group" value="fixtures"> Fixtures / Appliances</label>
+      <label class="pill"><input type="checkbox" name="affected_group" value="contents"> Contents</label>
+    </div>
+
+    <div id="external_section" class="hidden">
+      <h3>External (Structure)</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="external_item" value="walls"> Walls</label>
+        <label><input type="checkbox" name="external_item" value="roof"> Roof</label>
+        <label><input type="checkbox" name="external_item" value="foundation"> Foundation</label>
+        <label><input type="checkbox" name="external_item" value="porch_patio_deck"> Porch / Patio / Deck</label>
+        <label><input type="checkbox" name="external_item" value="landscaping"> Landscaping</label>
+        <label><input type="checkbox" name="external_item" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="external_notes">External – Additional Notes</label>
+        <textarea id="external_notes" name="external_notes"></textarea>
+      </div>
+    </div>
+
+    <div id="internal_section" class="hidden">
+      <h3>Internal (Structure)</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="internal_area" value="attic"> Attic</label>
+        <label><input type="checkbox" name="internal_area" value="fourth_up"> 4th Floor & Up</label>
+        <label><input type="checkbox" name="internal_area" value="third"> 3rd Floor</label>
+        <label><input type="checkbox" name="internal_area" value="second"> 2nd Floor</label>
+        <label><input type="checkbox" name="internal_area" value="first"> 1st Floor</label>
+        <label><input type="checkbox" name="internal_area" value="basement"> Basement</label>
+        <label><input type="checkbox" name="internal_area" value="crawlspace"> Crawlspace</label>
+        <label><input type="checkbox" name="internal_area" value="kitchens"> Kitchen(s)</label>
+        <label><input type="checkbox" name="internal_area" value="bathrooms"> Bathroom(s)</label>
+        <label><input type="checkbox" name="internal_area" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="internal_notes_struct">Internal – Additional Notes</label>
+        <textarea id="internal_notes_struct" name="internal_notes_struct"></textarea>
+      </div>
+    </div>
+
+    <div id="fixtures_section" class="hidden">
+      <h3>Fixtures / Appliances</h3>
+      <div class="field">
+        <label for="fixtures_notes">Describe affected fixtures / appliances</label>
+        <textarea id="fixtures_notes" name="fixtures_notes"></textarea>
+      </div>
+    </div>
+
+    <div id="contents_section" class="hidden">
+      <h3>Contents</h3>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="contents_item" value="furniture"> Furniture</label>
+        <label><input type="checkbox" name="contents_item" value="textiles"> Textiles</label>
+        <label><input type="checkbox" name="contents_item" value="tech"> Tech (Computers, TVs, etc.)</label>
+        <label><input type="checkbox" name="contents_item" value="large_items"> Unusually Large Items</label>
+        <label><input type="checkbox" name="contents_item" value="other"> Other</label>
+      </div>
+      <div class="field">
+        <label for="contents_notes">Contents – Additional Notes</label>
+        <textarea id="contents_notes" name="contents_notes"></textarea>
+      </div>
+    </div>
+
+    <!-- 7. Claim Information -->
+    <h2>6. Claim Information</h2>
+    <div class="field">
+      <label>Self-Pay</label>
+      <div class="inline-options">
+        <label><input type="radio" name="self_pay" value="yes"> Yes</label>
+        <label><input type="radio" name="self_pay" value="no"> No (Insurance Claim)</label>
+      </div>
+      <small>If “No”, insurance fields will be used.</small>
+    </div>
+
+    <div id="insurance_section">
+      <div class="field">
+        <label for="carrier">Insurance Carrier</label>
+        <input id="carrier" name="carrier" type="text">
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="claim_number">Claim No.</label>
+          <input id="claim_number" name="claim_number" type="text">
+        </div>
+        <div class="field">
+          <label for="policy_number">Policy No.</label>
+          <input id="policy_number" name="policy_number" type="text">
+        </div>
+        <div class="field">
+          <label for="deductible">Deductible</label>
+          <input id="deductible" name="deductible" type="text">
+        </div>
+      </div>
+    </div>
+
+    <h3>Adjuster</h3>
+    <div class="grid-2">
+      <div class="field">
+        <label for="adjuster_name">Name</label>
+        <input id="adjuster_name" name="adjuster_name" type="text">
+      </div>
+      <div class="field">
+        <label for="adjuster_phone">Phone No.</label>
+        <input id="adjuster_phone" name="adjuster_phone" type="tel">
+      </div>
+      <div class="field">
+        <label for="adjuster_email">Email</label>
+        <input id="adjuster_email" name="adjuster_email" type="email">
+      </div>
+      <div class="field">
+        <label>Has Visited Site</label>
+        <div class="inline-options">
+          <label><input type="radio" name="adjuster_visited" value="yes"> Yes</label>
+          <label><input type="radio" name="adjuster_visited" value="no"> No</label>
+        </div>
+      </div>
+    </div>
+
+    <h3>Agent</h3>
+    <div class="grid-2">
+      <div class="field">
+        <label for="agent_name">Name</label>
+        <input id="agent_name" name="agent_name" type="text">
+      </div>
+      <div class="field">
+        <label for="agent_phone">Phone No.</label>
+        <input id="agent_phone" name="agent_phone" type="tel">
+      </div>
+      <div class="field">
+        <label for="agent_email">Email</label>
+        <input id="agent_email" name="agent_email" type="email">
+      </div>
+    </div>
+    <div class="field">
+      <label for="agent_notes">Agent – Additional Notes</label>
+      <textarea id="agent_notes" name="agent_notes"></textarea>
+    </div>
+
+    <!-- 8. Access & On-Site Details -->
+    <h2>7. Access & On-Site Details</h2>
+
+    <div class="field">
+      <label>Access Type</label>
+      <div class="pill-group" id="accessTypeGroup">
+        <label class="pill"><input type="radio" name="access_type" value="lockbox"> Lockbox</label>
+        <label class="pill"><input type="radio" name="access_type" value="key_person"> Key with Person Onsite</label>
+        <label class="pill"><input type="radio" name="access_type" value="office"> Key at Office / Front Desk</label>
+        <label class="pill"><input type="radio" name="access_type" value="code"> Code / Smart Lock</label>
+        <label class="pill"><input type="radio" name="access_type" value="security"> Security / Gatehouse</label>
+        <label class="pill"><input type="radio" name="access_type" value="other"> Other</label>
+      </div>
+      <small>Additional fields will appear based on access type.</small>
+    </div>
+
+    <div id="lockbox_section" class="hidden">
+      <h3>Lockbox Details</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="lockbox_code">Lockbox Code</label>
+          <input id="lockbox_code" name="lockbox_code" type="text">
+        </div>
+        <div class="field">
+          <label for="lockbox_location">Lockbox Location</label>
+          <input id="lockbox_location" name="lockbox_location" type="text">
+        </div>
+      </div>
+    </div>
+
+    <div id="code_section" class="hidden">
+      <h3>Code / Smart Lock</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="access_code">Access Code</label>
+          <input id="access_code" name="access_code" type="text">
+        </div>
+        <div class="field">
+          <label for="access_instructions">Instructions (e.g., hit #, hold 3 sec)</label>
+          <input id="access_instructions" name="access_instructions" type="text">
+        </div>
+      </div>
+    </div>
+
+    <div id="security_section" class="hidden">
+      <h3>Security / Gatehouse</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label for="security_community">Community / Building Name</label>
+          <input id="security_community" name="security_community" type="text">
+        </div>
+        <div class="field">
+          <label for="security_phone">Security Phone / Contact</label>
+          <input id="security_phone" name="security_phone" type="text">
+        </div>
+      </div>
+      <div class="field">
+        <label for="security_instructions">Entry Instructions</label>
+        <textarea id="security_instructions" name="security_instructions"></textarea>
+      </div>
+    </div>
+
+    <div id="other_access_section" class="hidden">
+      <h3>Other Access Instructions</h3>
+      <div class="field">
+        <label for="other_access">Describe Access</label>
+        <textarea id="other_access" name="other_access"></textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Who will be on site when our team arrives?</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="onsite_person" value="insured"> Insured / Homeowner</label>
+        <label><input type="checkbox" name="onsite_person" value="tenant"> Tenant</label>
+        <label><input type="checkbox" name="onsite_person" value="property_manager"> Property Manager</label>
+        <label><input type="checkbox" name="onsite_person" value="business_contact"> Business Contact</label>
+        <label><input type="checkbox" name="onsite_person" value="no_one"> No one – key/code access only</label>
+        <label><input type="checkbox" name="onsite_person" value="other"> Other</label>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="onsite_name">On-Site Contact Name</label>
+        <input id="onsite_name" name="onsite_name" type="text">
+      </div>
+      <div class="field">
+        <label for="onsite_phone">On-Site Contact Phone</label>
+        <input id="onsite_phone" name="onsite_phone" type="tel">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Days Available</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="onsite_day" value="mon"> Mon</label>
+        <label><input type="checkbox" name="onsite_day" value="tue"> Tue</label>
+        <label><input type="checkbox" name="onsite_day" value="wed"> Wed</label>
+        <label><input type="checkbox" name="onsite_day" value="thu"> Thu</label>
+        <label><input type="checkbox" name="onsite_day" value="fri"> Fri</label>
+        <label><input type="checkbox" name="onsite_day" value="sat"> Sat</label>
+        <label><input type="checkbox" name="onsite_day" value="sun"> Sun</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="arrival_window">Preferred Time Window for Arrival</label>
+      <input id="arrival_window" name="arrival_window" type="text" placeholder="e.g., 8–12, 12–4, after 4 PM">
+    </div>
+
+    <!-- 9. Utilities & Misc Information -->
+    <h2>8. Utilities & Misc. Information</h2>
+    <div class="grid-3">
+      <div class="field">
+        <label>Electricity Available</label>
+        <div class="inline-options">
+          <label><input type="radio" name="electricity" value="yes"> Yes</label>
+          <label><input type="radio" name="electricity" value="no"> No</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Heat Available</label>
+        <div class="inline-options">
+          <label><input type="radio" name="heat" value="yes"> Yes</label>
+          <label><input type="radio" name="heat" value="no"> No</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Water Available</label>
+        <div class="inline-options">
+          <label><input type="radio" name="water" value="yes"> Yes</label>
+          <label><input type="radio" name="water" value="no"> No</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="access_to_loss">Access to Loss Area</label>
+      <textarea id="access_to_loss" name="access_to_loss"></textarea>
+    </div>
+<div class="field">
+      <label>Parking</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="parking" value="driveway"> Driveway</label>
+        <label><input type="checkbox" name="parking" value="street"> Street</label>
+        <label><input type="checkbox" name="parking" value="other"> Other</label>
+      </div>
+    </div>
+
+    <div class="field hidden" id="parking_other_field">
+      <label for="parking_other_desc">Parking – Other (Describe)</label>
+      <input id="parking_other_desc" name="parking_other_desc" type="text" placeholder="Describe parking instructions (permit, loading dock, metered parking, etc.)">
+    </div>
+
+    <div class="field">
+      <label>Previous Loss</label>
+      <div class="inline-options">
+        <label><input type="radio" name="previous_loss" value="yes"> Yes</label>
+        <label><input type="radio" name="previous_loss" value="no"> No</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="misc_notes">Additional Notes</label>
+      <textarea id="misc_notes" name="misc_notes"></textarea>
+    </div>
+
+    <!-- 10. Internal Intake Info -->
+    <h2>9. Internal Intake Info</h2>
+    <div class="grid-2">
+      <div class="field">
+        <label for="intake_completed_by">Intake Completed By</label>
+        <input id="intake_completed_by" name="intake_completed_by" type="text">
+      </div>
+      <div class="field">
+        <label for="intake_datetime">Date / Time of Intake</label>
+        <input id="intake_datetime" name="intake_datetime" type="datetime-local">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="internal_notes">Internal Notes (for SMS team only)</label>
+      <textarea id="internal_notes" name="internal_notes"></textarea>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="saveDraftBtn">Save Draft</button>
+      <button type="button" id="dispatchSheetBtn" class="dispatch">Generate Dispatch Sheet</button>
+      <button type="submit" id="submitLeadBtn">Submit Lead</button>
+    </div>
+
+  </div>
+</form>
+
+<script>
+  // --- Pill helpers (FIXED so checkboxes don't "double toggle") ---
+  function setupCheckboxPills(groupId) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+
+    // sync UI when checkbox changes
+    group.addEventListener('change', (e) => {
+      const input = e.target.closest('input[type="checkbox"]');
+      if (!input) return;
+      const pill = input.closest('.pill');
+      if (!pill) return;
+      pill.classList.toggle('active', input.checked);
+    });
+
+    // click anywhere on pill toggles once (but not when clicking directly on checkbox)
+    group.addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      if (e.target.matches('input[type="checkbox"]')) return;
+
+      const input = pill.querySelector('input[type="checkbox"]');
+      if (!input) return;
+      input.checked = !input.checked;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  function setupRadioPills(groupId) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+
+    // sync UI when radio changes
+    group.addEventListener('change', (e) => {
+      const input = e.target.closest('input[type="radio"]');
+      if (!input) return;
+
+      Array.from(group.querySelectorAll('.pill')).forEach(p => p.classList.remove('active'));
+      const pill = input.closest('.pill');
+      if (pill) pill.classList.add('active');
+    });
+
+    // click anywhere on pill selects radio
+    group.addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      const input = pill.querySelector('input[type="radio"]');
+      if (!input) return;
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  // --- Utility helpers ---
+  function getCheckedValues(name) {
+    return Array.from(document.getElementsByName(name))
+      .filter(el => el.checked)
+      .map(el => el.value);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // PILL click fix (Damage Type & Affected Property):
+    // Some pill controls are labels; clicking the pill can toggle twice (label default + JS).
+    // We intercept pill clicks (not on the input) and toggle exactly once.
+    document.addEventListener('click', function(e){
+      const pill = e.target.closest('.pill-group .pill');
+      if (!pill) return;
+
+      // Ignore direct input clicks (native behavior is fine)
+      if (e.target.closest('input')) return;
+
+      const input = pill.querySelector('input[type="checkbox"], input[type="radio"]');
+      if (!input) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (input.type === 'checkbox') {
+        input.checked = !input.checked;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (input.type === 'radio') {
+        if (!input.checked) {
+          input.checked = true;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    }, true);
+
+    // Pills
+    setupCheckboxPills('damageTypeGroup');        // multi
+    setupCheckboxPills('affectedPropertyGroup');  // multi
+    setupRadioPills('accessTypeGroup');           // single
+
+    // Property type sections
+    const propertyRadios = Array.from(document.getElementsByName('property_type'));
+    const resSection = document.getElementById('residential_section');
+    const comSection = document.getElementById('commercial_section');
+
+    propertyRadios.forEach(r => {
+      r.addEventListener('change', function () {
+        resSection.classList.toggle('hidden', this.value !== 'residential');
+        comSection.classList.toggle('hidden', this.value !== 'commercial');
+      });
+    });
+
+    // Affected property sections
+    const extSection = document.getElementById('external_section');
+    const intSection = document.getElementById('internal_section');
+    const fixSection = document.getElementById('fixtures_section');
+    const contSection = document.getElementById('contents_section');
+
+    function updateAffectedSections() {
+      const vals = new Set(getCheckedValues('affected_group'));
+      extSection.classList.toggle('hidden', !vals.has('external'));
+      intSection.classList.toggle('hidden', !vals.has('internal'));
+      fixSection.classList.toggle('hidden', !vals.has('fixtures'));
+      contSection.classList.toggle('hidden', !vals.has('contents'));
+    }
+    Array.from(document.getElementsByName('affected_group')).forEach(cb => cb.addEventListener('change', updateAffectedSections));
+
+    // Damage type sections
+    const fireSec = document.getElementById('fire_damage_section');
+    const waterSec = document.getElementById('water_damage_section');
+    const bioSec = document.getElementById('bio_damage_section');
+    const otherSec = document.getElementById('other_damage_section');
+
+    function updateDamageSections() {
+      const vals = new Set(getCheckedValues('damage_type'));
+      fireSec.classList.toggle('hidden', !vals.has('fire'));
+      waterSec.classList.toggle('hidden', !vals.has('water'));
+      bioSec.classList.toggle('hidden', !vals.has('bio'));
+      otherSec.classList.toggle('hidden', !vals.has('other'));
+    }
+    Array.from(document.getElementsByName('damage_type')).forEach(cb => cb.addEventListener('change', updateDamageSections));
+
+    // Access type sections
+    const accessRadios = Array.from(document.getElementsByName('access_type'));
+    const lockboxSection = document.getElementById('lockbox_section');
+    const codeSection = document.getElementById('code_section');
+    const securitySection = document.getElementById('security_section');
+    const otherAccessSection = document.getElementById('other_access_section');
+
+    accessRadios.forEach(r => {
+      r.addEventListener('change', function () {
+        lockboxSection.classList.add('hidden');
+        codeSection.classList.add('hidden');
+        securitySection.classList.add('hidden');
+        otherAccessSection.classList.add('hidden');
+        if (this.value === 'lockbox') lockboxSection.classList.remove('hidden');
+        if (this.value === 'code') codeSection.classList.remove('hidden');
+        if (this.value === 'security') securitySection.classList.remove('hidden');
+        if (this.value === 'other') otherAccessSection.classList.remove('hidden');
+      });
+    });
+
+    // Billing same as loss
+    const billingSame = document.getElementById('billing_same_loss');
+    billingSame.addEventListener('change', function () {
+      if (this.checked) {
+        document.getElementById('billing_address').value = document.getElementById('loss_address').value;
+        document.getElementById('billing_address2').value = document.getElementById('loss_address2').value;
+        document.getElementById('billing_city').value = document.getElementById('loss_city').value;
+        document.getElementById('billing_state').value = document.getElementById('loss_state').value;
+        document.getElementById('billing_zip').value = document.getElementById('loss_zip').value;
+      }
+    });
+
+    
+    // Parking "Other" -> show text box
+    const parkingOtherCb = document.querySelector('input[name="parking"][value="other"]');
+    const parkingOtherField = document.getElementById('parking_other_field');
+    const parkingOtherInput = document.getElementById('parking_other_desc');
+
+    function updateParkingOther() {
+      if (!parkingOtherCb || !parkingOtherField) return;
+      const show = parkingOtherCb.checked;
+      parkingOtherField.classList.toggle('hidden', !show);
+      if (!show && parkingOtherInput) parkingOtherInput.value = '';
+    }
+    if (parkingOtherCb) {
+      parkingOtherCb.addEventListener('change', updateParkingOther);
+      updateParkingOther(); // initialize on load
+    }
+
+
+    // Primary Contact: "Same as Customer" helper
+    const primarySame = document.getElementById('primary_same_customer');
+    const pcName = document.getElementById('primary_contact_name');
+    const pcPhone = document.getElementById('primary_contact_phone');
+    const pcEmail = document.getElementById('primary_contact_email');
+
+    function setPrimaryContactFromCustomer(lock) {
+      const cName = document.getElementById('full_name')?.value || '';
+      const cPhone = document.getElementById('main_phone')?.value || '';
+      const cEmail = document.getElementById('email')?.value || '';
+
+      if (pcName) pcName.value = cName;
+      if (pcPhone) pcPhone.value = cPhone;
+      if (pcEmail) pcEmail.value = cEmail;
+
+      [pcName, pcPhone, pcEmail].forEach(el => {
+        if (!el) return;
+        el.readOnly = !!lock;
+        el.style.background = lock ? '#f7f7f7' : '';
+      });
+    }
+
+    if (primarySame) {
+      primarySame.addEventListener('change', () => {
+        if (primarySame.checked) setPrimaryContactFromCustomer(true);
+        else [pcName, pcPhone, pcEmail].forEach(el => { if (el) { el.readOnly = false; el.style.background=''; }});
+      });
+    }
+
+    // Save Draft (simple localStorage snapshot)
+    document.getElementById('saveDraftBtn').addEventListener('click', function () {
+      const formData = new FormData(document.getElementById('intakeForm'));
+      const obj = {};
+      for (const [k, v] of formData.entries()) obj[k] = v;
+
+      // Save checkbox groups too
+      obj.__checked = {};
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        if (!cb.name) return;
+        if (!obj.__checked[cb.name]) obj.__checked[cb.name] = [];
+        if (cb.checked) obj.__checked[cb.name].push(cb.value || cb.id || 'on');
+      });
+
+      localStorage.setItem('sms_intake_draft', JSON.stringify(obj));
+      alert('Draft saved in this browser.');
+    });
+
+    // Generate Dispatch Sheet (1-page summary PDF)
+    document.getElementById('dispatchSheetBtn').addEventListener('click', function () {
+      // Sanity checks
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('jsPDF did not load (CDN blocked). Falling back to Print.');
+        window.print();
+        return;
+      }
+      if (!window.html2canvas) {
+        alert('html2canvas did not load (required for PDF rendering). Falling back to Print.');
+        window.print();
+        return;
+      }
+
+      const getVal = (id) => (document.getElementById(id)?.value || '').trim();
+      const getRadio = (name) => (document.querySelector(`input[name="${name}"]:checked`)?.value || '').trim();
+      const getChecks = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]`))
+        .filter(x => x.checked)
+        .map(x => x.value);
+
+      const fmtYesNo = (v) => v ? v.toUpperCase() : '';
+
+      // Build a compact summary element
+      const wrapper = document.createElement('div');
+      wrapper.id = 'dispatchSheetTemp';
+      wrapper.style.cssText = `
+        width: 760px;
+        font-family: Arial, sans-serif;
+        color: #111;
+        padding: 14px 16px;
+        box-sizing: border-box;
+      `;
+
+      const lossAddress = [
+        getVal('loss_address'),
+        getVal('loss_address2')
+      ].filter(Boolean).join(', ');
+      const lossCityStateZip = [getVal('loss_city'), getVal('loss_state'), getVal('loss_zip')].filter(Boolean).join(' ');
+
+      const preferredContact = getVal('preferred_contact');
+
+      // Property Info
+      const propertyType = getRadio('property_type');
+      const yearBuilt = getVal('year_built');
+
+      const damageTypes = getChecks('damage_type').map(v => v.toUpperCase()).join(' • ');
+      const fireItems = getChecks('fire_item').map(v => v.replaceAll('_',' '));
+      const waterItems = getChecks('water_item').map(v => v.replaceAll('_',' '));
+      const bioItems = getChecks('bio_item').map(v => v.replaceAll('_',' '));
+      const otherDamageItems = getChecks('other_item').map(v => v.replaceAll('_',' '));
+      const otherDamageDesc = getVal('damage_other_desc');
+
+      const affectedGroups = getChecks('affected_group').map(v => v.toUpperCase()).join(' • ');
+      const internalAreas = getChecks('internal_area').map(v => v.replaceAll('_',' ')).join(', ');
+      const externalItems = getChecks('external_item').map(v => v.replaceAll('_',' ')).join(', ');
+      const contentsItems = getChecks('contents_item').map(v => v.replaceAll('_',' ')).join(', ');
+
+      // Access
+      const accessType = getRadio('access_type');
+      const lockboxCode = getVal('lockbox_code');
+      const lockboxLoc = getVal('lockbox_location');
+      const accessCode = getVal('access_code');
+      const accessInstr = getVal('access_instructions');
+      const securityCommunity = getVal('security_community');
+      const securityPhone = getVal('security_phone');
+      const securityInstr = getVal('security_instructions');
+      const otherAccess = getVal('other_access');
+
+      const onsiteWho = getChecks('onsite_person').map(v => v.replaceAll('_',' ')).join(', ');
+      const onsiteName = getVal('onsite_name');
+      const onsitePhone = getVal('onsite_phone');
+      const daysAvail = getChecks('onsite_day').map(v => v.toUpperCase()).join(' ');
+      const arrivalWindow = getVal('arrival_window');
+
+      // Parking
+      const parking = getChecks('parking');
+      const parkingOtherText = getVal('parking_other_desc');
+
+      // Utilities
+      const electricity = getRadio('electricity');
+      const heat = getRadio('heat');
+      const water = getRadio('water');
+
+      // Emergency & key loss info
+      const emergencyServices = getRadio('emergency_services');
+      const mitigationNeeded = getRadio('mitigation_needed');
+      const dateOfLoss = getVal('date_of_loss');
+      const timeOfLoss = getVal('time_of_loss');
+
+      // Insurance (include even if blank)
+      const selfPay = getRadio('self_pay');
+      const carrier = getVal('carrier');
+      const claimNo = getVal('claim_number');
+      const policyNo = getVal('policy_number');
+      const deductible = getVal('deductible');
+
+      const adjusterName = getVal('adjuster_name');
+      const adjusterPhone = getVal('adjuster_phone');
+      const adjusterEmail = getVal('adjuster_email');
+      const adjusterVisited = getRadio('adjuster_visited');
+
+      const agentName = getVal('agent_name');
+      const agentPhone = getVal('agent_phone');
+      const agentEmail = getVal('agent_email');
+
+      const dispatchNotes = getVal('misc_notes') || getVal('internal_notes') || '';
+
+      const customerName = getVal('full_name');
+      const mainPhone = getVal('main_phone');
+      const customerEmail = getVal('email');
+      const primaryName = getVal('primary_contact_name');
+      const primaryPhone = getVal('primary_contact_phone');
+      const primaryEmail = getVal('primary_contact_email');
+
+      const displayName = primaryName || customerName;
+      const displayPhone = primaryPhone || mainPhone;
+      const displayEmail = primaryEmail || customerEmail;
+
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0,10);
+
+      // Helpers for HTML blocks
+      const box = (title, bodyHtml) => `
+        <div style="border:1px solid #ddd; border-radius:10px; padding:10px 12px; margin:8px 0;">
+          <div style="font-weight:700; font-size:12px; letter-spacing:.4px; text-transform:uppercase; color:#333; margin-bottom:6px;">${title}</div>
+          <div style="font-size:12px; line-height:1.35;">${bodyHtml}</div>
+        </div>
+      `;
+
+      const row = (label, value) => `
+        <div style="display:flex; gap:10px; margin:2px 0;">
+          <div style="min-width:140px; color:#444;">${label}</div>
+          <div style="flex:1; font-weight:600;">${value || '<span style="color:#999; font-weight:400;">—</span>'}</div>
+        </div>
+      `;
+
+      const chips = (arr) => arr && arr.length ? arr.map(x => `<span style="display:inline-block;border:1px solid #ccc;border-radius:999px;padding:2px 8px;margin:2px 6px 2px 0;font-size:11px;">${x}</span>`).join('') : '<span style="color:#999;">—</span>';
+
+      // Access detail line
+      let accessDetail = '';
+      if (accessType === 'lockbox') accessDetail = `Code: <b>${lockboxCode || '—'}</b> • Location: <b>${lockboxLoc || '—'}</b>`;
+      else if (accessType === 'code') accessDetail = `Code: <b>${accessCode || '—'}</b> • Instructions: <b>${accessInstr || '—'}</b>`;
+      else if (accessType === 'security') accessDetail = `Community: <b>${securityCommunity || '—'}</b> • Security: <b>${securityPhone || '—'}</b><br>Entry: <b>${securityInstr || '—'}</b>`;
+      else if (accessType === 'other') accessDetail = `<b>${otherAccess || '—'}</b>`;
+
+      // Parking detail
+      const parkingDisplay = parking.length ? parking.map(p => p.replaceAll('_',' ')) : [];
+      let parkingHtml = chips(parkingDisplay.map(p => p.toUpperCase()));
+      if (parking.includes('other')) {
+        parkingHtml += `<div style="margin-top:4px;">Other: <b>${parkingOtherText || '—'}</b></div>`;
+      }
+
+      // Damage details
+      const damageHtml = `
+        ${row('Damage Type(s)', damageTypes || '—')}
+        <div style="margin-top:4px;">
+          ${row('Fire', fireItems.length ? chips(fireItems) : '<span style="color:#999;">—</span>')}
+          ${row('Water', waterItems.length ? chips(waterItems) : '<span style="color:#999;">—</span>')}
+          ${row('Bio', bioItems.length ? chips(bioItems) : '<span style="color:#999;">—</span>')}
+          ${row('Other', otherDamageItems.length ? chips(otherDamageItems) : '<span style="color:#999;">—</span>')}
+          ${otherDamageDesc ? row('Other desc', otherDamageDesc) : ''}
+        </div>
+      `;
+
+      const affectedHtml = `
+        ${row('Affected', affectedGroups || '—')}
+        ${internalAreas ? row('Internal areas', internalAreas) : ''}
+        ${externalItems ? row('External items', externalItems) : ''}
+        ${contentsItems ? row('Contents', contentsItems) : ''}
+      `;
+
+      const customerHtml = `
+        ${row('Primary contact', displayName)}
+        ${row('Primary phone', displayPhone)}
+        ${row('Email', displayEmail)}
+        ${row('Preferred contact', preferredContact)}
+        ${row('Property type', (propertyType || '').toUpperCase())}
+        ${row('Year built', yearBuilt)}
+        ${row('Loss address', [lossAddress, lossCityStateZip].filter(Boolean).join(', '))}
+      `;
+
+      const lossHtml = `
+        ${row('Date / time of loss', [dateOfLoss, timeOfLoss].filter(Boolean).join(' ') || '—')}
+        ${row('Mitigation needed', fmtYesNo(mitigationNeeded))}
+        ${row('Emergency services', fmtYesNo(emergencyServices))}
+      `;
+
+      const accessHtml = `
+        ${row('Access type', (accessType || '').toUpperCase())}
+        <div style="margin:4px 0 2px;">${accessDetail || '<span style="color:#999;">—</span>'}</div>
+        ${row('On-site', onsiteWho)}
+        ${row('On-site contact', [onsiteName, onsitePhone].filter(Boolean).join(' • '))}
+        ${row('Days available', daysAvail)}
+        ${row('Arrival window', arrivalWindow)}
+      `;
+
+      const utilitiesHtml = `
+        ${row('Electric', fmtYesNo(electricity))}
+        ${row('Heat', fmtYesNo(heat))}
+        ${row('Water', fmtYesNo(water))}
+        <div style="margin-top:4px;">${row('Parking', parkingHtml)}</div>
+      `;
+
+      const insuranceHtml = `
+        ${row('Self-pay', fmtYesNo(selfPay))}
+        ${row('Carrier', carrier)}
+        ${row('Claim #', claimNo)}
+        ${row('Policy #', policyNo)}
+        ${row('Deductible', deductible)}
+        <div style="margin-top:6px; font-weight:700;">Adjuster</div>
+        ${row('Name', adjusterName)}
+        ${row('Phone', adjusterPhone)}
+        ${row('Email', adjusterEmail)}
+        ${row('Visited site', fmtYesNo(adjusterVisited))}
+        <div style="margin-top:6px; font-weight:700;">Agent</div>
+        ${row('Name', agentName)}
+        ${row('Phone', agentPhone)}
+        ${row('Email', agentEmail)}
+      `;
+
+      const notesHtml = dispatchNotes ? `<div style="white-space:pre-wrap; font-weight:600;">${dispatchNotes}</div>` : '<span style="color:#999;">—</span>';
+
+      wrapper.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px;">
+          <div>
+            <div style="font-size:18px; font-weight:800;">ServiceMaster by Singer</div>
+            <div style="font-size:13px; font-weight:800; letter-spacing:.6px;">DISPATCH SUMMARY</div>
+          </div>
+          <div style="text-align:right; font-size:11px; color:#444;">
+            <div><b>Date:</b> ${todayStr}</div>
+            <div><b>Emergency:</b> ${(emergencyServices || '').toUpperCase() || '—'}</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+          ${box('Customer & Location', customerHtml)}
+          ${box('Loss Snapshot', lossHtml)}
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          ${box('Damage', damageHtml)}
+          ${box('Affected Areas', affectedHtml)}
+        </div>
+
+        ${box('Access & Arrival (Critical)', accessHtml)}
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          ${box('Parking & Utilities', utilitiesHtml)}
+          ${box('Insurance & Contacts', insuranceHtml)}
+        </div>
+
+        ${box('Dispatch Notes', notesHtml)}
+      `;
+
+      // Render to PDF
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'letter');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+
+        // Attach temporarily (keep it on-page but invisible so html2canvas captures reliably)
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '0';
+        wrapper.style.top = '0';
+        wrapper.style.opacity = '1';
+        wrapper.style.zIndex = '-1';
+        wrapper.style.pointerEvents = 'none';
+        wrapper.style.background = '#fff';
+        document.body.appendChild(wrapper);
+
+        html2canvas(wrapper, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0
+        }).then(canvas => {
+          document.body.removeChild(wrapper);
+
+          // Filename: Dispatch_<LastName>_<YYYY-MM-DD>.pdf
+          const nameParts = (customerName || '').trim().split(/\s+/);
+          const lastName = nameParts.length ? nameParts[nameParts.length - 1] : 'Customer';
+          const dateStr = new Date().toISOString().slice(0,10);
+          const street = (getVal('loss_address') || '').split(',')[0].replace(/\s+/g,'_');
+          const filename = `Dispatch_${lastName}_${street || 'Address'}_${dateStr}.pdf`;
+
+          const imgData = canvas.toDataURL('image/png');
+          const maxWidth = pageWidth - (margin * 2);
+          const maxHeight = pageHeight - (margin * 2);
+
+          // Fit-to-page (single page) to avoid blank page 2
+          let drawWidth = maxWidth;
+          let drawHeight = (canvas.height * drawWidth) / canvas.width;
+
+          if (drawHeight > maxHeight) {
+            const scale = maxHeight / drawHeight;
+            drawWidth = drawWidth * scale;
+            drawHeight = drawHeight * scale;
+          }
+
+          // Center horizontally
+          const x = (pageWidth - drawWidth) / 2;
+          const y = margin;
+
+                    pdf.addImage(imgData, 'PNG', x, y, drawWidth, drawHeight);
+
+          // Force download (Teams-safe: no popups/new tabs)
+          const blob = pdf.output('blob');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);}).catch(err => {
+          console.error(err);
+          document.body.removeChild(wrapper);
+          alert('Dispatch PDF generation failed. Falling back to Print. Check Console for details.');
+          window.print();
+        });
+      } catch (err) {
+        console.error(err);
+        alert('Dispatch PDF generation failed. Falling back to Print. Check Console for details.');
+        window.print();
+      }
+});
+
+    // Submit handler: generate PDF if possible, otherwise print
+    const form = document.getElementById('intakeForm');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Sanity checks
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('jsPDF did not load (CDN blocked). Falling back to Print.');
+        window.print();
+        return;
+      }
+      if (!window.html2canvas) {
+        alert('html2canvas did not load (required for PDF rendering). Falling back to Print.');
+        window.print();
+        return;
+      }
+
+      const sourceElement = document.querySelector('.container');
+      if (!sourceElement) {
+        alert('Could not find the form container to render. Falling back to Print.');
+        window.print();
+        return;
+      }
+
+      // Filename: Intake_<LastName>_<YYYY-MM-DD>.pdf
+      const nameParts = (document.getElementById('full_name')?.value || '').trim().split(/\s+/);
+      const lastName = nameParts.length ? nameParts[nameParts.length - 1] : 'Customer';
+      const dateStr = new Date().toISOString().slice(0,10);
+      const filename = `Intake_${lastName}_${dateStr}.pdf`;
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'letter');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 20;
+
+        // Clone container so we can safely change width + hide buttons
+        const clone = sourceElement.cloneNode(true);
+        clone.style.width = '760px';
+        clone.style.maxWidth = '760px';
+        clone.style.margin = '0';
+        clone.style.boxShadow = 'none';
+        clone.style.borderRadius = '0';
+        clone.style.padding = '10px 12px';
+        clone.style.fontSize = '7pt';
+        clone.style.lineHeight = '1.25';
+        // Tighten header spacing for PDF (reduces top-page blank space)
+        const h1El = clone.querySelector('h1');
+        const subEl = clone.querySelector('.subtitle');
+        if (h1El) h1El.style.margin = '0 0 2px 0';
+        if (subEl) subEl.style.margin = '0 0 4px 0';
+        clone.querySelectorAll('h2').forEach(h2 => { h2.style.margin = '10px 0 5px 0'; });
+
+
+        const actions = clone.querySelector('.actions');
+        if (actions) actions.style.display = 'none';
+
+        // Mount clone off normal flow but ON PAGE (behind everything) so canvas captures reliably
+        const mount = document.createElement('div');
+        mount.style.position = 'absolute';
+        mount.style.left = '0';
+        mount.style.top = '0';
+        mount.style.zIndex = '-1';
+        mount.style.background = '#fff';
+        document.body.appendChild(mount);
+        // Build "blocks" to avoid splitting text in the middle:
+        const blocks = [];
+        // For each h2, collect nodes until next h2
+        const allChildren = Array.from(clone.children);
+        // clone is a div.container; its children include h1, subtitle, h2, etc.
+        const h2s = Array.from(clone.querySelectorAll('h2'));
+        h2s.forEach((h2El, idx) => {
+          const block = document.createElement('div');
+
+          // Put header at the top of the very first block so it doesn't consume its own page
+          if (idx === 0) {
+            const h1 = clone.querySelector('h1');
+            const subtitle = clone.querySelector('.subtitle');
+            if (h1) block.appendChild(h1.cloneNode(true));
+            if (subtitle) block.appendChild(subtitle.cloneNode(true));
+          }
+
+          block.appendChild(h2El.cloneNode(true));
+// Collect sibling nodes after this h2 up to the next h2
+          let next = h2El.nextElementSibling;
+          while (next && next.tagName !== 'H2') {
+            block.appendChild(next.cloneNode(true));
+            next = next.nextElementSibling;
+          }
+          blocks.push({ title: h2El.textContent || ('section_' + idx), node: block });
+        });
+
+        // Render blocks sequentially into PDF
+        let cursorY = margin;
+
+        const renderBlock = async (blockNode) => {
+          // Wrap in a fixed-width container for consistent layout
+          const wrap = document.createElement('div');
+          wrap.style.width = '760px';
+          wrap.style.padding = '0';
+          wrap.style.margin = '0';
+          wrap.style.background = '#fff';
+          wrap.appendChild(blockNode);
+
+          // Temporarily attach to mount for layout
+          mount.appendChild(wrap);
+
+          const canvas = await html2canvas(wrap, {
+            scale: 1.5,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0
+          });
+
+          // Remove wrap after rendering to keep DOM light
+          mount.removeChild(wrap);
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = pageWidth - (margin * 2);
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          // If block doesn't fit on current page, go to next page
+          const remaining = pageHeight - margin - cursorY;
+          if (imgHeight <= remaining) {
+            pdf.addImage(imgData, 'PNG', margin, cursorY, imgWidth, imgHeight);
+            cursorY += imgHeight + 4; // small spacing between blocks
+            return;
+          }
+
+          // If block fits on a fresh page, start a new page
+          if (imgHeight <= (pageHeight - (margin * 2))) {
+            pdf.addPage();
+            cursorY = margin;
+            pdf.addImage(imgData, 'PNG', margin, cursorY, imgWidth, imgHeight);
+            cursorY += imgHeight + 10;
+            return;
+          }
+
+          // If the block is taller than a page, slice it (rare — usually long note areas)
+          let heightLeft = imgHeight;
+          let position = cursorY;
+
+          // Start new page if we're not at top
+          if (cursorY !== margin) {
+            pdf.addPage();
+            cursorY = margin;
+            position = margin;
+          }
+
+          pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+          heightLeft -= (pageHeight - margin * 2);
+
+          while (heightLeft > 0) {
+            pdf.addPage();
+            position = margin - (imgHeight - heightLeft);
+            pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+            heightLeft -= (pageHeight - margin * 2);
+          }
+          cursorY = margin + 10;
+        };
+
+        (async () => {
+          for (const b of blocks) {
+            await renderBlock(b.node);
+          }
+
+          document.body.removeChild(mount);
+
+                    // Force download (Teams-safe: no popups/new tabs)
+          const blob = pdf.output('blob');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);})().catch(err => {
+          console.error(err);
+          document.body.removeChild(mount);
+          alert('PDF generation failed. Falling back to Print. Check Console for details.');
+          window.print();
+        });
+
+      } catch (err) {
+        console.error(err);
+        alert('PDF generation failed. Falling back to Print. Check Console for details.');
+        window.print();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

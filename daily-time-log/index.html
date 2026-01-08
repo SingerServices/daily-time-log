@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ServiceMaster by Singer – Daily Time & Job Log</title>
+  <style>
+    :root{
+      --sm-yellow:#FFEE50; --ink:#111; --muted:#666; --bg:#f7f7f7;
+      --card:#fff; --field:#D9E2FF; --border:#d7d7d7; --radius:14px;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); }
+    .wrap{ max-width:1100px; margin:0 auto; padding:14px; }
+    .bar{ background:var(--sm-yellow); border-radius:var(--radius); padding:14px 16px; font-weight:800; font-size:18px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 0; }
+    button{ border:1px solid var(--border); background:#fff; padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:700; }
+    button.primary{ background:#111; color:#fff; border-color:#111; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+    .hint{ margin-top:10px; font-size:12px; color:var(--muted); line-height:1.35; }
+    .card{ margin-top:12px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:0 2px 12px rgba(0,0,0,.04); }
+    .grid{ display:grid; grid-template-columns:repeat(12,1fr); gap:10px; }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field label{ font-size:12px; color:var(--muted); font-weight:800; letter-spacing:.2px; }
+    .field input,.field select{ width:100%; border:1px solid #bfc7e6; background:var(--field); border-radius:10px; padding:10px; font-size:14px; outline:none; }
+    .field input[readonly]{ background:#eef2ff; border-style:dashed; }
+    .col-3{ grid-column:span 3; } .col-4{ grid-column:span 4; } .col-6{ grid-column:span 6; } .col-12{ grid-column:span 12; }
+    @media (max-width:900px){ .col-3{grid-column:span 6;} .col-4{grid-column:span 6;} .col-6{grid-column:span 12;} }
+    .tableWrap{ overflow:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--border); border-radius:12px; }
+    table{ width:100%; border-collapse:separate; border-spacing:0; min-width:980px; background:#fff; }
+    thead th{ position:sticky; top:0; z-index:1; background:#eee; font-size:12px; text-align:left; padding:10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    tbody td{ padding:8px 10px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+    tbody tr:last-child td{ border-bottom:0; }
+    .cellInput{ width:100%; border:1px solid #bfc7e6; background:var(--field); border-radius:10px; padding:8px; font-size:13px; }
+    .cellInput[readonly]{ background:#eef2ff; border-style:dashed; }
+    .rowNum{ font-weight:900; font-size:12px; color:#333; width:28px; }
+    .totals{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px dashed var(--border); }
+    .pill{ display:flex; gap:10px; align-items:center; background:#fff; border:1px solid var(--border); border-radius:999px; padding:8px 12px; font-weight:900; }
+    .pill span{ color:var(--muted); font-weight:800; font-size:12px; }
+    .pdf-area{ background:#fff; padding:14px; border-radius:12px; }
+    .sigPad{ width:100%; height:120px; background:#fff; border:2px dashed #bfc7e6; border-radius:12px; touch-action:none; }
+    .sigRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:10px; }
+    .sigHint{ font-size:12px; color:var(--muted); }
+    .bannerError{ display:none; margin-top:12px; padding:10px 12px; border-radius:12px; border:1px solid #f2c2c2; background:#fff3f3; color:#7a1c1c; font-size:13px; font-weight:700; }
+    @media print{
+      body{ background:#fff; } .wrap{ max-width:none; padding:0; }
+      .actions,.hint,.bannerError{ display:none !important; }
+      .card{ box-shadow:none; border:none; } .bar{ border-radius:0; } .tableWrap{ border:none; } .pdf-area{ padding:0; }
+      #clearSigBtn{ display:none !important; }
+      .sigPad{ border:1px solid #999; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="actions">
+      <button class="primary" id="btnSavePdf">Save as PDF (iPhone-safe)</button>
+      <button id="btnClear">Clear Form</button>
+    </div>
+
+    <div class="hint">
+      This version is <b>offline-safe</b> (no external libraries), so it will not white-screen on iPhone.
+      Tap <b>Save as PDF</b> → iPhone opens the Print sheet → tap Share/Save to Files.
+    </div>
+
+    <div id="bannerError" class="bannerError"></div>
+
+    <div id="pdfArea" class="pdf-area">
+      <div class="bar">ServiceMaster by Singer – Daily Time &amp; Job Log</div>
+
+      <div class="card">
+        <div class="grid">
+          <div class="field col-3"><label>Vendor</label><input id="vendor" type="text" /></div>
+          <div class="field col-3"><label>Driver Name</label><input id="driverName" type="text" /></div>
+          <div class="field col-3">
+            <label>Residential / Commercial</label>
+            <select id="resCom"><option value="">Select…</option><option>Residential</option><option>Commercial</option></select>
+          </div>
+          <div class="field col-3"><label>Date</label><input id="logDate" type="date" /></div>
+
+          <div class="field col-4"><label>Workers Name</label><input id="workersName" type="text" /></div>
+          <div class="field col-4"><label>Start Mileage</label><input id="startMileage" type="number" inputmode="numeric" /></div>
+          <div class="field col-4"><label>End Mileage</label><input id="endMileage" type="number" inputmode="numeric" /></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;">#</th>
+                <th>Time In</th>
+                <th>Break (min)</th>
+                <th>Time Out</th>
+                <th>Total Hours</th>
+                <th>Job # / Dept</th>
+                <th>Job Address</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+
+        <div class="totals">
+          <div class="pill"><span>Daily Total Hours</span><div id="dailyTotal">0.00</div></div>
+          <div class="pill"><span>Mileage</span><div id="mileageTotal">—</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="grid">
+          <div class="field col-4"><label>Lead Print Name</label><input id="leadPrint" type="text" /></div>
+
+          <div class="field col-6">
+            <label>Lead Signature (draw with finger)</label>
+            <canvas id="sigCanvas" class="sigPad"></canvas>
+            <div class="sigRow">
+              <div class="sigHint">Sign with your finger. If the page scrolls instead of drawing, try two-finger scroll outside the box.</div>
+              <button type="button" id="clearSigBtn">Clear Signature</button>
+            </div>
+          </div>
+
+          <div class="field col-2"><label>Date</label><input id="signDate" type="date" /></div>
+        </div>
+
+        <div style="margin-top:10px; font-size:11px; color:#888; text-align:right;">
+          Form: Daily Time &amp; Job Log | Rev: 2026.01
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener("error", (e) => {
+      const b = document.getElementById("bannerError");
+      b.style.display = "block";
+      b.textContent = "Error: " + (e && e.message ? e.message : "Unknown error");
+    });
+
+    const ROW_COUNT = 13;
+    const tbody = document.getElementById("rows");
+    function makeRow(i){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="rowNum">${i}</td>
+        <td><input class="cellInput" type="time" data-role="in" /></td>
+        <td><input class="cellInput" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-role="break" /></td>
+        <td><input class="cellInput" type="time" data-role="out" /></td>
+        <td><input class="cellInput" type="text" data-role="total" readonly placeholder="0.00" /></td>
+        <td><input class="cellInput" type="text" data-role="job" /></td>
+        <td><input class="cellInput" type="text" data-role="addr" /></td>
+      `;
+      return tr;
+    }
+    for(let i=1;i<=ROW_COUNT;i++) tbody.appendChild(makeRow(i));
+
+    function parseTimeToMinutes(t){
+      if(!t) return null;
+      const parts = t.split(":");
+      if(parts.length < 2) return null;
+      const h = Number(parts[0]), m = Number(parts[1]);
+      if(Number.isNaN(h) || Number.isNaN(m)) return null;
+      return h*60 + m;
+    }
+    function calcHours(timeIn, timeOut, breakMin){
+      const inMin = parseTimeToMinutes(timeIn);
+      const outMin = parseTimeToMinutes(timeOut);
+      if(inMin === null || outMin === null) return null;
+      let diff = outMin - inMin;
+      if(diff < 0) diff += 24*60;
+      const b = Number(breakMin || 0);
+      const worked = Math.max(0, diff - (Number.isFinite(b) ? b : 0));
+      return worked / 60;
+    }
+    function fmt2(n){ return (Math.round(n*100)/100).toFixed(2); }
+
+    function recalc(){
+      let sum = 0;
+      [...tbody.querySelectorAll("tr")].forEach(tr=>{
+        const tin = tr.querySelector('[data-role="in"]').value;
+        const tout = tr.querySelector('[data-role="out"]').value;
+        const brk = tr.querySelector('[data-role="break"]').value;
+        const totalEl = tr.querySelector('[data-role="total"]');
+        const hrs = calcHours(tin, tout, brk);
+        if(hrs === null){ totalEl.value = ""; }
+        else { totalEl.value = fmt2(hrs); sum += hrs; }
+      });
+      document.getElementById("dailyTotal").textContent = fmt2(sum);
+
+      const s = Number(document.getElementById("startMileage").value);
+      const e = Number(document.getElementById("endMileage").value);
+      const mt = document.getElementById("mileageTotal");
+      if(Number.isFinite(s) && Number.isFinite(e) && s>0 && e>0) mt.textContent = (e - s).toString();
+      else mt.textContent = "—";
+    }
+    document.addEventListener("input", (e)=>{
+      const t = e.target;
+      if(t.matches('[data-role="in"],[data-role="out"],[data-role="break"],#startMileage,#endMileage')) recalc();
+    });
+
+    const canvas = document.getElementById("sigCanvas");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    let hasInk = false;
+
+    function sizeSig(){
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      ctx.setTransform(1,0,0,1,0,0);
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#111";
+    }
+    function clearSignature(){
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0,0,rect.width,rect.height);
+      hasInk = false;
+    }
+    function posFromTouch(e){
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches[0];
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    canvas.addEventListener("touchstart", (e)=>{
+      e.preventDefault();
+      sizeSig();
+      drawing = true;
+      const p = posFromTouch(e);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    }, { passive:false });
+
+    canvas.addEventListener("touchmove", (e)=>{
+      e.preventDefault();
+      if(!drawing) return;
+      const p = posFromTouch(e);
+      ctx.lineTo(p.x,p.y); ctx.stroke();
+      hasInk = true;
+    }, { passive:false });
+
+    canvas.addEventListener("touchend", (e)=>{
+      e.preventDefault();
+      drawing = false;
+    }, { passive:false });
+
+    canvas.addEventListener("mousedown", (e)=>{
+      sizeSig();
+      drawing = true;
+      const rect = canvas.getBoundingClientRect();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX-rect.left, e.clientY-rect.top);
+    });
+    window.addEventListener("mousemove", (e)=>{
+      if(!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.lineTo(e.clientX-rect.left, e.clientY-rect.top);
+      ctx.stroke();
+      hasInk = true;
+    });
+    window.addEventListener("mouseup", ()=> drawing=false);
+
+    document.getElementById("clearSigBtn").addEventListener("click", clearSignature);
+
+    window.addEventListener("load", ()=>{
+      sizeSig();
+      clearSignature();
+      recalc();
+    });
+
+    document.getElementById("btnSavePdf").addEventListener("click", ()=>{
+      if(!hasInk){
+        const ok = confirm("No signature detected. Save as PDF anyway?");
+        if(!ok) return;
+      }
+      window.print();
+    });
+
+    document.getElementById("btnClear").addEventListener("click", ()=>{
+      if(!confirm("Clear all fields (including signature)?")) return;
+      document.querySelectorAll("input, select").forEach(el=>{
+        if(el.tagName === "SELECT") el.value = "";
+        else el.value = "";
+      });
+      clearSignature();
+      recalc();
+    });
+  </script>
+</body>
+</html>
