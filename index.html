@@ -17,7 +17,12 @@
       color:var(--ink);
       background:var(--bg);
     }
-    .wrap{ max-width:1100px; margin:0 auto; padding:14px; padding-top: calc(14px + env(safe-area-inset-top)); }
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:14px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+    }
     .bar{
       background:var(--sm-yellow);
       border-radius:var(--radius);
@@ -61,7 +66,7 @@
       background:#fff3f3;
       color:#7a1c1c;
       font-size:13px;
-      font-weight:800;
+      font-weight:900;
     }
 
     .card{
@@ -89,11 +94,23 @@
       border:1px solid #bfc7e6;
       background:var(--field);
       border-radius:10px;
-      padding:12px;
+      padding:12px 14px;
       font-size:16px; /* prevents iOS zoom */
       outline:none;
+      line-height:1.2;
     }
     .field input[readonly]{ background:#eef2ff; border-style:dashed; }
+
+    /* Make date/time inputs look nicer & consistent */
+    input[type="date"], input[type="time"]{
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 12px 14px;
+      line-height: 1.2;
+      text-align: left;
+      min-height: 48px;
+    }
+
     .col-3{ grid-column:span 3; } .col-4{ grid-column:span 4; } .col-6{ grid-column:span 6; } .col-12{ grid-column:span 12; }
     @media (max-width:900px){ .col-3{grid-column:span 6;} .col-4{grid-column:span 6;} .col-6{grid-column:span 12;} }
 
@@ -130,11 +147,20 @@
       border:1px solid #bfc7e6;
       background:var(--field);
       border-radius:10px;
-      padding:10px;
-      font-size:16px; /* prevent iOS zoom if opened desktop */
+      padding:10px 12px;
+      font-size:16px;
+      min-height: 44px;
     }
     .cellInput[readonly]{ background:#eef2ff; border-style:dashed; }
     .rowNum{ font-weight:900; font-size:12px; color:#333; width:28px; }
+
+    /* Make table time columns look cleaner on desktop */
+    @media (min-width:701px){
+      .cellInput[type="time"]{ min-width: 140px; }
+      td:nth-child(2), td:nth-child(4){ width: 160px; } /* Time In/Out */
+      td:nth-child(3){ width: 140px; }                  /* Break */
+      td:nth-child(5){ width: 140px; }                  /* Total */
+    }
 
     .totals{
       display:flex;
@@ -212,7 +238,7 @@
       justify-content:space-between;
       margin-top:10px;
     }
-    .sigHint{ font-size:12px; color:var(--muted); font-weight:700; }
+    .sigHint{ font-size:12px; color:var(--muted); font-weight:800; }
 
     @media print{
       body{ background:#fff; }
@@ -296,7 +322,7 @@
           <label>Lead Signature</label>
           <canvas id="sigCanvas" class="sigPad"></canvas>
           <div class="sigRow">
-            <div class="sigHint">Sign with finger (iPhone) or touch (Android). If opened in Teams, tap … → Open in Browser.</div>
+            <div class="sigHint">If opened in Teams: tap … → Open in Browser. Then tap “Save as PDF” → Print screen opens → tap Share → Save to Files.</div>
             <button type="button" id="clearSigBtn">Clear Signature</button>
           </div>
         </div>
@@ -313,8 +339,6 @@
   <script>
     // ---------- Detect in-app browsers (Teams/Outlook/etc.) ----------
     const ua = navigator.userAgent || "";
-    const isIOS = /iPad|iPhone|iPod/i.test(ua);
-    const isAndroid = /Android/i.test(ua);
     const isTeamsInApp = /Teams|Microsoft Teams|MSAL|Outlook|Microsoft Outlook/i.test(ua); // heuristic
     const notice = document.getElementById("notice");
 
@@ -324,7 +348,7 @@
     }
 
     if (isTeamsInApp) {
-      showNotice("Heads up: the Teams in-app browser can block Signature and PDF Save. Tap the … menu → Open in Browser (Safari/Chrome) for full functionality.");
+      showNotice("Heads up: the Teams in-app browser can block Signature and PDF Save. Tap the … menu → Open in Browser (Safari/Chrome). Then tap “Save as PDF” → Print screen opens → tap Share (top-right) → Save to Files.");
     }
 
     // ---------- Build rows (table) ----------
@@ -386,7 +410,6 @@
       if(Number.isFinite(s) && Number.isFinite(e) && s>0 && e>0) mt.textContent = (e - s).toString();
       else mt.textContent = "—";
 
-      // sync totals into mobile cards if present
       syncTableToMobileTotals();
     }
 
@@ -448,19 +471,13 @@
         mobileRowsEl.appendChild(card);
 
         const syncToMobile = () => {
-          const mi = document.getElementById(`mIn${n}`);
-          const mo = document.getElementById(`mOut${n}`);
-          const mb = document.getElementById(`mBreak${n}`);
-          const mt = document.getElementById(`mTotal${n}`);
-          const mj = document.getElementById(`mJob${n}`);
-          const ma = document.getElementById(`mAddr${n}`);
-          mi.value = tin.value;
-          mo.value = tout.value;
-          mb.value = brk.value;
-          mt.value = tot.value;
+          document.getElementById(`mIn${n}`).value = tin.value;
+          document.getElementById(`mOut${n}`).value = tout.value;
+          document.getElementById(`mBreak${n}`).value = brk.value;
+          document.getElementById(`mTotal${n}`).value = tot.value;
           document.getElementById(`mTot${n}`).textContent = tot.value || "0.00";
-          mj.value = job.value;
-          ma.value = addr.value;
+          document.getElementById(`mJob${n}`).value = job.value;
+          document.getElementById(`mAddr${n}`).value = addr.value;
         };
 
         const syncToTable = () => {
@@ -474,13 +491,9 @@
           document.getElementById(`mTot${n}`).textContent = tot.value || "0.00";
         };
 
-        // table -> mobile
         [tin, tout, brk, job, addr].forEach(el => el.addEventListener("input", syncToMobile));
-
-        // mobile -> table
         ["mIn","mOut","mBreak","mJob","mAddr"].forEach(prefix => {
-          const el = document.getElementById(`${prefix}${n}`);
-          el.addEventListener("input", syncToTable);
+          document.getElementById(`${prefix}${n}`).addEventListener("input", syncToTable);
         });
 
         syncToMobile();
@@ -488,7 +501,6 @@
     }
 
     function syncTableToMobileTotals(){
-      // update mobile total readouts if cards exist
       for (let n=1; n<=ROW_COUNT; n++){
         const totEl = tbody.querySelectorAll("tr")[n-1]?.querySelector('[data-role="total"]');
         const mTot = document.getElementById(`mTot${n}`);
@@ -581,14 +593,13 @@
     // ---------- PDF Export ----------
     document.getElementById("btnSavePdf").addEventListener("click", () => {
       if (isTeamsInApp) {
-        alert("Teams in-app browser may block PDF Save. Tap … → Open in Browser (Safari/Chrome), then press Save as PDF again.");
+        alert("Teams in-app browser may block PDF Save. Tap … → Open in Browser (Safari/Chrome). Then tap “Save as PDF” → Print screen opens → tap Share → Save to Files.");
         return;
       }
       if (!sigHasInk) {
         const ok = confirm("No signature detected. Save as PDF anyway?");
         if (!ok) return;
       }
-      // Works on iPhone + Android: Print → Save as PDF
       window.print();
     });
 
@@ -617,4 +628,3 @@
   </script>
 </body>
 </html>
-
