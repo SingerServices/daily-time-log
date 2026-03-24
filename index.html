@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
+  <title>ServiceMaster by Singer – Daily Time & Job Log</title>
+
+  <style>
+    :root{
+      --sm-yellow:#FFEE50; --ink:#111; --muted:#666; --bg:#f7f7f7;
+      --card:#fff; --field:#D9E2FF; --border:#d7d7d7; --radius:14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink);
+      background:var(--bg);
+    }
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:14px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+    }
+    .bar{
+      background:var(--sm-yellow);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      font-weight:900;
+      font-size:18px;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:12px 0 0;
+      position: sticky;
+      top: calc(10px + env(safe-area-inset-top));
+      z-index: 20;
+    }
+    button{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:12px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      flex:1;
+    }
+    button.primary{ background:#111; color:#fff; border-color:#111; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+    .hint{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .notice{
+      display:none;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #f2c2c2;
+      background:#fff3f3;
+      color:#7a1c1c;
+      font-size:13px;
+      font-weight:900;
+    }
+
+    .card{
+      margin-top:12px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 2px 12px rgba(0,0,0,.04);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      gap:10px;
+    }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .field input,.field select{
+      width:100%;
+      border:1px solid #bfc7e6;
+      background:var(--field);
+      border-radius:10px;
+      padding:12px 14px;
+      font-size:16px; /* prevents iOS zoom */
+      outline:none;
+      line-height:1.2;
+    }
+    .field input[readonly]{ background:#eef2ff; border-style:dashed; }
+
+    /* Make date/time inputs look nicer & consistent */
+    input[type="date"], input[type="time"]{
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 12px 14px;
+      line-height: 1.2;
+      text-align: left;
+      min-height: 48px;
+    }
+
+    .col-3{ grid-column:span 3; } .col-4{ grid-column:span 4; } .col-6{ grid-column:span 6; } .col-12{ grid-column:span 12; }
+    @media (max-width:900px){ .col-3{grid-column:span 6;} .col-4{grid-column:span 6;} .col-6{grid-column:span 12;} }
+
+    /* Desktop table */
+    .tableWrap{
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      border:1px solid var(--border);
+      border-radius:12px;
+    }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:980px;
+      background:#fff;
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#eee;
+      font-size:12px;
+      text-align:left;
+      padding:10px;
+      border-bottom:1px solid var(--border);
+      white-space:nowrap;
+      font-weight:900;
+    }
+    tbody td{ padding:8px 10px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+    tbody tr:last-child td{ border-bottom:0; }
+    .cellInput{
+      width:100%;
+      border:1px solid #bfc7e6;
+      background:var(--field);
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:16px;
+      min-height: 44px;
+    }
+    .cellInput[readonly]{ background:#eef2ff; border-style:dashed; }
+    .rowNum{ font-weight:900; font-size:12px; color:#333; width:28px; }
+
+    /* Make table time columns look cleaner on desktop */
+    @media (min-width:701px){
+      .cellInput[type="time"]{ min-width: 140px; }
+      td:nth-child(2), td:nth-child(4){ width: 160px; } /* Time In/Out */
+      td:nth-child(3){ width: 140px; }                  /* Break */
+      td:nth-child(5){ width: 140px; }                  /* Total */
+    }
+
+    .totals{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:12px;
+      padding-top:10px;
+      border-top:1px dashed var(--border);
+    }
+    .pill{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:900;
+    }
+    .pill span{ color:var(--muted); font-weight:900; font-size:12px; }
+
+    /* Mobile cards (instead of table) */
+    #mobileRows{ display:none; }
+    @media (max-width:700px){
+      .tableWrap{ display:none; }
+      #mobileRows{ display:block; margin-top:4px; }
+      .bar{ font-size:16px; }
+      .actions button{ flex:1; }
+    }
+    .rowCard{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .rowTop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .rowBadge{
+      font-weight:900;
+      font-size:12px;
+      background:#f3f3f3;
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 10px;
+    }
+    .rowGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .full{ grid-column: 1 / -1; }
+    .smallLabel{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    /* Signature */
+    .sigPad{
+      width:100%;
+      height:130px;
+      background:#fff;
+      border:2px dashed #bfc7e6;
+      border-radius:12px;
+      touch-action:none; /* critical */
+    }
+    .sigRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+    }
+    .sigHint{ font-size:12px; color:var(--muted); font-weight:800; }
+
+    @media print{
+      body{ background:#fff; }
+      .actions,.hint,.notice{ display:none !important; }
+      .card{ box-shadow:none; border:none; }
+      .tableWrap{ border:none; }
+      #clearSigBtn{ display:none !important; }
+      .sigPad{ border:1px solid #999; }
+      #mobileRows{ display:none !important; } /* print desktop table */
+      .tableWrap{ display:block !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="actions">
+      <button type="button" class="primary" id="btnSavePdf">Save as PDF</button>
+      <button type="button" id="btnClear">Clear Form</button>
+    </div>
+
+    <div class="hint">
+      Best results: open in <b>Safari</b> (iPhone) or <b>Chrome</b> (Android). PDF export uses Print → Save as PDF.
+    </div>
+
+    <div id="notice" class="notice"></div>
+
+    <div class="bar">ServiceMaster by Singer – Daily Time &amp; Job Log</div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="field col-3"><label>Vendor</label><input id="vendor" type="text" /></div>
+        <div class="field col-3"><label>Driver Name</label><input id="driverName" type="text" /></div>
+        <div class="field col-3">
+          <label>Residential / Commercial</label>
+          <select id="resCom">
+            <option value="">Select…</option>
+            <option>Residential</option>
+            <option>Commercial</option>
+          </select>
+        </div>
+        <div class="field col-3"><label>Date</label><input id="logDate" type="date" /></div>
+
+        <div class="field col-4"><label>Workers Name</label><input id="workersName" type="text" /></div>
+        <div class="field col-4"><label>Start Mileage</label><input id="startMileage" type="number" inputmode="numeric" /></div>
+        <div class="field col-4"><label>End Mileage</label><input id="endMileage" type="number" inputmode="numeric" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:42px;">#</th>
+              <th>Time In</th>
+              <th>Break (min)</th>
+              <th>Time Out</th>
+              <th>Total Hours</th>
+              <th>Job # / Dept</th>
+              <th>Job Address</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <div id="mobileRows"></div>
+
+      <div class="totals">
+        <div class="pill"><span>Daily Total Hours</span><div id="dailyTotal">0.00</div></div>
+        <div class="pill"><span>Mileage</span><div id="mileageTotal">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="field col-4"><label>Lead Print Name</label><input id="leadPrint" type="text" /></div>
+
+        <div class="field col-6">
+          <label>Lead Signature</label>
+          <canvas id="sigCanvas" class="sigPad"></canvas>
+          <div class="sigRow">
+            <div class="sigHint">If opened in Teams: tap … → Open in Browser. Then tap “Save as PDF” → Print screen opens → tap Share → Save to Files.</div>
+            <button type="button" id="clearSigBtn">Clear Signature</button>
+          </div>
+        </div>
+
+        <div class="field col-2"><label>Date</label><input id="signDate" type="date" /></div>
+      </div>
+
+      <div style="margin-top:10px; font-size:11px; color:#888; text-align:right;">
+        Form: Daily Time &amp; Job Log | Rev: 2026.01
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Detect in-app browsers (Teams/Outlook/etc.) ----------
+    const ua = navigator.userAgent || "";
+    const isTeamsInApp = /Teams|Microsoft Teams|MSAL|Outlook|Microsoft Outlook/i.test(ua); // heuristic
+    const notice = document.getElementById("notice");
+
+    function showNotice(msg){
+      notice.style.display = "block";
+      notice.textContent = msg;
+    }
+
+    if (isTeamsInApp) {
+      showNotice("Heads up: the Teams in-app browser can block Signature and PDF Save. Tap the … menu → Open in Browser (Safari/Chrome). Then tap “Save as PDF” → Print screen opens → tap Share (top-right) → Save to Files.");
+    }
+
+    // ---------- Build rows (table) ----------
+    const ROW_COUNT = 13;
+    const tbody = document.getElementById("rows");
+
+    function makeRow(i){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="rowNum">${i}</td>
+        <td><input class="cellInput" type="time" data-role="in" /></td>
+        <td><input class="cellInput" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-role="break" /></td>
+        <td><input class="cellInput" type="time" data-role="out" /></td>
+        <td><input class="cellInput" type="text" data-role="total" readonly placeholder="0.00" /></td>
+        <td><input class="cellInput" type="text" data-role="job" /></td>
+        <td><input class="cellInput" type="text" data-role="addr" /></td>
+      `;
+      return tr;
+    }
+    for(let i=1;i<=ROW_COUNT;i++) tbody.appendChild(makeRow(i));
+
+    // ---------- Calculations ----------
+    function parseTimeToMinutes(t){
+      if(!t) return null;
+      const parts = t.split(":");
+      if(parts.length < 2) return null;
+      const h = Number(parts[0]), m = Number(parts[1]);
+      if(Number.isNaN(h) || Number.isNaN(m)) return null;
+      return h*60 + m;
+    }
+    function calcHours(timeIn, timeOut, breakMin){
+      const inMin = parseTimeToMinutes(timeIn);
+      const outMin = parseTimeToMinutes(timeOut);
+      if(inMin === null || outMin === null) return null;
+      let diff = outMin - inMin;
+      if(diff < 0) diff += 24*60; // overnight
+      const b = Number(breakMin || 0);
+      const worked = Math.max(0, diff - (Number.isFinite(b) ? b : 0));
+      return worked / 60;
+    }
+    function fmt2(n){ return (Math.round(n*100)/100).toFixed(2); }
+
+    function recalc(){
+      let sum = 0;
+      [...tbody.querySelectorAll("tr")].forEach(tr=>{
+        const tin = tr.querySelector('[data-role="in"]').value;
+        const tout = tr.querySelector('[data-role="out"]').value;
+        const brk = tr.querySelector('[data-role="break"]').value;
+        const totalEl = tr.querySelector('[data-role="total"]');
+        const hrs = calcHours(tin, tout, brk);
+        if(hrs === null){ totalEl.value = ""; }
+        else { totalEl.value = fmt2(hrs); sum += hrs; }
+      });
+      document.getElementById("dailyTotal").textContent = fmt2(sum);
+
+      const s = Number(document.getElementById("startMileage").value);
+      const e = Number(document.getElementById("endMileage").value);
+      const mt = document.getElementById("mileageTotal");
+      if(Number.isFinite(s) && Number.isFinite(e) && s>0 && e>0) mt.textContent = (e - s).toString();
+      else mt.textContent = "—";
+
+      syncTableToMobileTotals();
+    }
+
+    document.addEventListener("input", (e)=>{
+      const t = e.target;
+      if(t.matches('[data-role="in"],[data-role="out"],[data-role="break"],#startMileage,#endMileage')) recalc();
+    });
+
+    // ---------- Mobile row cards (mirrors the table) ----------
+    const mobileRowsEl = document.getElementById("mobileRows");
+
+    function buildMobileCards(){
+      mobileRowsEl.innerHTML = "";
+      [...tbody.querySelectorAll("tr")].forEach((tr, idx) => {
+        const n = idx + 1;
+
+        const tin = tr.querySelector('[data-role="in"]');
+        const brk = tr.querySelector('[data-role="break"]');
+        const tout = tr.querySelector('[data-role="out"]');
+        const tot = tr.querySelector('[data-role="total"]');
+        const job = tr.querySelector('[data-role="job"]');
+        const addr = tr.querySelector('[data-role="addr"]');
+
+        const card = document.createElement("div");
+        card.className = "rowCard";
+        card.innerHTML = `
+          <div class="rowTop">
+            <div class="rowBadge">Row ${n}</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:900;">Total: <span id="mTot${n}">0.00</span></div>
+          </div>
+
+          <div class="rowGrid">
+            <div>
+              <div class="smallLabel">Time In</div>
+              <input class="cellInput" type="time" id="mIn${n}">
+            </div>
+            <div>
+              <div class="smallLabel">Time Out</div>
+              <input class="cellInput" type="time" id="mOut${n}">
+            </div>
+            <div>
+              <div class="smallLabel">Break (min)</div>
+              <input class="cellInput" type="number" inputmode="numeric" min="0" step="1" id="mBreak${n}" placeholder="0">
+            </div>
+            <div>
+              <div class="smallLabel">Total Hours</div>
+              <input class="cellInput" type="text" id="mTotal${n}" readonly placeholder="0.00">
+            </div>
+            <div class="full">
+              <div class="smallLabel">Job # / Dept</div>
+              <input class="cellInput" type="text" id="mJob${n}">
+            </div>
+            <div class="full">
+              <div class="smallLabel">Job Address</div>
+              <input class="cellInput" type="text" id="mAddr${n}">
+            </div>
+          </div>
+        `;
+        mobileRowsEl.appendChild(card);
+
+        const syncToMobile = () => {
+          document.getElementById(`mIn${n}`).value = tin.value;
+          document.getElementById(`mOut${n}`).value = tout.value;
+          document.getElementById(`mBreak${n}`).value = brk.value;
+          document.getElementById(`mTotal${n}`).value = tot.value;
+          document.getElementById(`mTot${n}`).textContent = tot.value || "0.00";
+          document.getElementById(`mJob${n}`).value = job.value;
+          document.getElementById(`mAddr${n}`).value = addr.value;
+        };
+
+        const syncToTable = () => {
+          tin.value = document.getElementById(`mIn${n}`).value;
+          tout.value = document.getElementById(`mOut${n}`).value;
+          brk.value = document.getElementById(`mBreak${n}`).value;
+          job.value = document.getElementById(`mJob${n}`).value;
+          addr.value = document.getElementById(`mAddr${n}`).value;
+          recalc();
+          document.getElementById(`mTotal${n}`).value = tot.value;
+          document.getElementById(`mTot${n}`).textContent = tot.value || "0.00";
+        };
+
+        [tin, tout, brk, job, addr].forEach(el => el.addEventListener("input", syncToMobile));
+        ["mIn","mOut","mBreak","mJob","mAddr"].forEach(prefix => {
+          document.getElementById(`${prefix}${n}`).addEventListener("input", syncToTable);
+        });
+
+        syncToMobile();
+      });
+    }
+
+    function syncTableToMobileTotals(){
+      for (let n=1; n<=ROW_COUNT; n++){
+        const totEl = tbody.querySelectorAll("tr")[n-1]?.querySelector('[data-role="total"]');
+        const mTot = document.getElementById(`mTot${n}`);
+        const mTotal = document.getElementById(`mTotal${n}`);
+        if (totEl && mTot) mTot.textContent = totEl.value || "0.00";
+        if (totEl && mTotal) mTotal.value = totEl.value || "";
+      }
+    }
+
+    // ---------- Signature Pad (iPhone + Android + desktop) ----------
+    const sigCanvas = document.getElementById("sigCanvas");
+    const sigCtx = sigCanvas.getContext("2d");
+    let sigDrawing = false;
+    let sigHasInk = false;
+
+    function sizeSignatureCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = sigCanvas.getBoundingClientRect();
+
+      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sigCanvas.width  = Math.max(1, Math.floor(rect.width * dpr));
+      sigCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      sigCtx.scale(dpr, dpr);
+
+      sigCtx.lineWidth = 2.5;
+      sigCtx.lineCap = "round";
+      sigCtx.strokeStyle = "#111";
+    }
+
+    function clearSignature() {
+      const rect = sigCanvas.getBoundingClientRect();
+      sigCtx.clearRect(0, 0, rect.width, rect.height);
+      sigHasInk = false;
+    }
+
+    function getPos(clientX, clientY){
+      const rect = sigCanvas.getBoundingClientRect();
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startLine(x,y){
+      sigDrawing = true;
+      sigCtx.beginPath();
+      sigCtx.moveTo(x,y);
+    }
+    function moveLine(x,y){
+      if(!sigDrawing) return;
+      sigCtx.lineTo(x,y);
+      sigCtx.stroke();
+      sigHasInk = true;
+    }
+    function endLine(){ sigDrawing = false; }
+
+    // Touch (iOS)
+    sigCanvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      sizeSignatureCanvas();
+      const t = e.touches[0];
+      const p = getPos(t.clientX, t.clientY);
+      startLine(p.x,p.y);
+    }, { passive:false });
+
+    sigCanvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const p = getPos(t.clientX, t.clientY);
+      moveLine(p.x,p.y);
+    }, { passive:false });
+
+    sigCanvas.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      endLine();
+    }, { passive:false });
+
+    // Pointer (Android/desktop)
+    sigCanvas.addEventListener("pointerdown", (e) => {
+      sizeSignatureCanvas();
+      const p = getPos(e.clientX, e.clientY);
+      startLine(p.x,p.y);
+    });
+    sigCanvas.addEventListener("pointermove", (e) => {
+      const p = getPos(e.clientX, e.clientY);
+      moveLine(p.x,p.y);
+    });
+    sigCanvas.addEventListener("pointerup", endLine);
+    sigCanvas.addEventListener("pointercancel", endLine);
+
+    document.getElementById("clearSigBtn").addEventListener("click", clearSignature);
+
+    // ---------- PDF Export ----------
+    document.getElementById("btnSavePdf").addEventListener("click", () => {
+      if (isTeamsInApp) {
+        alert("Teams in-app browser may block PDF Save. Tap … → Open in Browser (Safari/Chrome). Then tap “Save as PDF” → Print screen opens → tap Share → Save to Files.");
+        return;
+      }
+      if (!sigHasInk) {
+        const ok = confirm("No signature detected. Save as PDF anyway?");
+        if (!ok) return;
+      }
+      window.print();
+    });
+
+    // ---------- Clear form ----------
+    document.getElementById("btnClear").addEventListener("click", () => {
+      if(!confirm("Clear all fields (including signature)?")) return;
+      document.querySelectorAll("input, select").forEach(el=>{
+        if(el.tagName === "SELECT") el.value = "";
+        else el.value = "";
+      });
+      clearSignature();
+      recalc();
+      buildMobileCards();
+    });
+
+    // ---------- Init ----------
+    window.addEventListener("load", () => {
+      sizeSignatureCanvas();
+      clearSignature();
+      recalc();
+      buildMobileCards();
+    });
+    window.addEventListener("resize", () => {
+      sizeSignatureCanvas();
+    });
+  </script>
+</body>
+</html>
